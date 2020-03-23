@@ -1,9 +1,7 @@
-# 学习通自动签到系统（秒懂签到）
-**其实，本来打算把签到系统一直压着，赚点饭钱，可是仔细想了想，还是算了吧，也未必有人会来买，更何况就算有人买，也就赚点小钱8，平时还需要服务器维护，并且我免费的学生服务器就一年时间。。。。。反正就是巴拉巴拉一堆问题，不如把源码公开后放到博客里，也算是记录了大学期间的一件趣事8**
+### 学习通自动签到系统 秒懂签到（各类型签到 + 自定义拍照签到时的照片，以及位置签到的地点自定义，外加投票 / 选人 / 测验 / 问卷 / 评分 / 分组任务 / 直播 / 通知 秒发邮件提醒，等有时间了再用QTi写个界面）
 
-**下载的方式：**
-- [**github下载（源码）**](https://github.com/Meterprete/Learning-pass-automatic-sign-in-system)
-- **[【2020.3.23更新】腾讯微云下载，成品，无源码，可直接使用（提取码：54250p）](https://share.weiyun.com/5t1fs6I)**
+**其实，本来打算把签到系统一直压着，赚点饭钱，可是仔细想了想，还是算了吧，也未必有人会来买，更何况就算有人买，也就赚点小钱8，平时还需要服务器维护，并且我免费的学生服务器就一年时间。。。。。反正就是巴拉巴拉一堆问题，不如把源码公开后放到博客里，也算是记录了大学期间的一件趣事8**
+**`下载链接在文末`**
 
 > 首先说，实现学习通的签到功能并不难（包括手势签到扫码签到什么什么的），自己可以抓包找找接口，实在找不到或者嫌麻烦，也可以用我项目里的这几个接口也可以。这里要说的是，其实让我印象最深刻的是第一次做验证系统（就是。。。。软件使用权限口令的生成，怎么防止第三方解密，以及如何防止用户二次利用Token，以及怎么防止用户修改本地时间达到延长软件使用期限，还有防止在软件和服务器通信过程中第三方劫持，限制同一台机器使用一个Token，并且还要考虑用户如果在Token没有失效的情况下再次购买Token，服务器不能因为MAC和Token不一样就限制人家吧，还有得防止恶意请求DDOS你的服务器8。。。。。。反正就是巴拉巴拉一大堆需要考虑的问题，不过还好都解决了，完成的不是很困难）
 0
@@ -86,58 +84,63 @@ def post(self,response)
 
 ```python
 ‘’‘服务器端’‘’
-def post(self, response):
-  try:
-      data = response.POST.get('data')
-      res = s.loads(data)
-      timstp = res['timstp']
-      if (time() - timstp) < 3:
-          mac = res['mac']
-          try:
-              UserMac.objects.get(mac=mac)
-              data = {'status': 'Request unofficial, error', 'timstp': int(time())}
-              resp = re.findall(r"b'(.*)'", str(s.dumps(data)))[0]
-              return JsonResponse({'data': resp})
-          except:
-              data = {'status': True, 'timstp': int(time())}
-              resp = re.findall(r"b'(.*)'", str(s.dumps(data)))[0]
-              return JsonResponse({"data": resp})
-      else:
-          return JsonResponse({'status': 'Network reason request timeout, error'})
-  except:
-      return JsonResponse({'status': 'Request unofficial, error'})
+class CM(View):
+    def get(self, response):
+        return JsonResponse({'status': "Nima blew up. Request P. request. Request way. NIMA's wrong. Fuck"})
 
+    def post(self, response):
+        try:
+            data = response.POST.get('data')
+            res = s.loads(data)
+            timstp = res['timstp']
+            if (time() - timstp) < 3:
+                mac = res['mac']
+                try:
+                    UserMac.objects.get(mac=mac)
+                    data = {'status': 'Request unofficial, error', 'timstp': int(time())}
+                    resp = re.findall(r"b'(.*)'", str(s.dumps(data)))[0]
+                    return JsonResponse({'data': resp})
+                except:
+                    date = 7 * 3600 * 24
+                    sm = Serializer(key, date)
+                    stp = {"Expiration_date": date, "timestp": int(time())}
+                    m = sm.dumps(stp)
+                    ms = re.findall(r"b'(.*)'", str(m))[0]
+                    data = {'status': True, 'timstp': int(time()), 'token': ms}
 
+                    resp = re.findall(r"b'(.*)'", str(sm.dumps(data)))[0]
+                    return JsonResponse({"data": resp})
+            else:
+                return JsonResponse({'status': 'Network reason request timeout, error'})
+        except Exception as e:
+            print(e)
+            return JsonResponse({'status': 'Request unofficial, error'})
+
+---------------------------------------------------------------------------------------------------
 
 
 ‘’‘客户端’‘’
 import json
-
+from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 import requests
 import uuid
-from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 import re
 import time
 
-key = "xxxxxxxxx"
+key = "..................."
 s = Serializer(key)
-
 node = uuid.getnode()
 mac = uuid.UUID(int=node).hex[-12:]
 stp = {"mac": mac, "timstp": int(time.time())}
 m = s.dumps(stp)
 ms = re.findall(r"b'(.*)'", str(m))[0]
 
-res = json.loads(requests.post("http://xxxxxxxx/CM", data={"data": ms}).content.decode())
+res = json.loads(requests.post("http://.............../CM", data={"data": ms}).content.decode())
 try:
     datap = s.loads(res['data'])
     if int(time.time()) - datap['timstp'] < 3:
         if datap['status'] == True:
-            date = 7 * 3600 * 24
-            s = Serializer(key, date)
-            stp = {"Expiration_date": date, "timestp": int(time.time())}
-            m = s.dumps(stp)
-            ms = re.findall(r"b'(.*)'", str(m))[0]
+            ms = datap['token']
             print('''
 =======================================================================================
 
@@ -187,20 +190,20 @@ from multiprocessing import Process
 
 class Baopo:
     def __init__(self):
-
+        self.task_list = []
+        self.alog_list = []
         '''读取配置文件中的配置信息'''
-        with open('config.ini', 'r') as f:
-            self.config = json.loads(f.read())
-
+        with open('config.ini', 'rb') as f:
+            self.config = json.loads((f.read()).decode())
         '''邮件信息初始化'''
-        self.sender = 'xxxxxx@163.com'
-        self.password = 'xxxxxxxxxxxxx'
+        self.sender = '........@...........'
+        self.password = '...............'
         self.sendTo = self.config['sendTo']
         self.mail_host = "smtp.163.com"
         try:
             # 获取时间戳以及约定的时间
             self.Time = self.config['Token']
-            s = Serializer("xxxxxxxxxxxx")
+            s = Serializer("......................")
             self.epc = s.loads(self.Time)['Expiration_date']
             self.startime = int(s.loads(self.Time)['timestp'])
         except:
@@ -219,6 +222,7 @@ class Baopo:
 
 ===================================================================================== 
             ''')
+            time.sleep(600)
             return
 
         # 请求标准时间
@@ -229,7 +233,7 @@ class Baopo:
         self.mac = uuid.UUID(int=node).hex[-12:]
 
         '''学习通接口相关信息初始化'''
-        self.Signin_url = "https://mobilelearn.chaoxing.com/pptSign/stuSignajax?activeId={}&uid={}&clientip=&latitude=-1&longitude=-1&appType=15&fid={}"
+        self.Signin_url = "https://mobilelearn.chaoxing.com/pptSign/stuSignajax?activeId={}&uid={}&clientip=&appType=15&fid={}&address={}&latitude={}&longitude={}"
         self.actived_url = "https://mobilelearn.chaoxing.com/ppt/activeAPI/taskactivelist?courseId="
         self.getclass_url = "http://mooc1-api.chaoxing.com/mycourse/backclazzdata?view=json&rss=1"
         self.index_url = "http://i.mooc.chaoxing.com/space/index?"
@@ -248,13 +252,54 @@ class Baopo:
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36"
         }
 
+    def Sign_Kind_test(self, s, activeId, classId, fid, courseId):
+        args = "/widget/sign/pcStuSignController/preSign?" + "activeId={}".format(activeId) + "&classId={}".format(
+            classId) + "&fid={}".format(fid) + "&courseId={}".format(courseId)
+        response = s.get(url="https://mobilelearn.chaoxing.com" + args, headers=self.headers)
+        # print("检测链接：https://mobilelearn.chaoxing.com{}".format(args))
+        return response
+
+    def upload_img(self, s):
+        url = 'https://pan-yz.chaoxing.com/upload?_token=5d2e8d0aaa92e3701398035f530c4155'
+        mobile_header = {
+            'User-Agent': 'Dalvik/2.1.0 (Linux; U; Android 10; MI 8 MIUI/20.2.27)'
+                          ' com.chaoxing.mobile/ChaoXingStudy_3_4.3.6_android_phone_496_27 (@Kalimdor)'
+                          '_994222229cb94d688c462b7257600006',
+            'Host': 'pan-yz.chaoxing.com'
+        }
+        img = {}
+        try:
+            img = {"file": ("Sign.jpg", open("./IMG/M.jpg", "rb"))}
+        except:
+            print("图片未找到，如果出现了此提示，则说明您未设置拍照签到的图片，已为您发送系统默认的图片，若想自定义照片，请把照片命名为 'M.jpg' 后放在 'IMG' 文件夹中")
+            if self.config["gender"] == "男":
+                return "9cb266884f96bb598a2ee197268a8baf"
+            else:
+                return "30f6e2f3c1259aefa7c174f3f379e9cd"
+        i_data = {'puid': "80421235"}
+        response = s.post(url=url, headers=mobile_header, data=i_data, files=img)
+        return response.json().get('objectId')
+
+    def photoSign(self, s, objectId, activeId, courseId, fid):
+        """拍照签到"""
+        url = "https://mobilelearn.chaoxing.com/pptSign/stuSignajax?activeId={}&classId=&fid={}&courseId={}&objectId={}".format(
+            activeId, fid, courseId, objectId)
+        response = s.get(url=url, headers=self.headers)
+        return response.text
+
     # 传入 课程名 / 教师姓名 / 签到时间 / 学生人数 / 签到形式 / 剩余签到时间
-    def send_email(self, className, teacherName, localTime, stuSum, signKind, Remaining_time):
+    def send_email(self, className, teacherName, localTime, stuSum, signKind, Remaining_time, img):
         receiver = []
-        content = '''
-        <div style="width: 300px;margin: auto;"><h1 style="color: mediumseagreen;font-family: 楷体;">秒懂签到 世界如此简单</h1><div style="font-family: 楷体;"><div style="font-size: 10px">            尊敬的用户您好:<br>            &nbsp;&nbsp;&nbsp;&nbsp;刚刚由<span style="color: red">{}</span> 老师发起的签到任务已帮您签到成功，签到系统仍然继续为您监测签到任务.            '秒懂签到'，用技术改变时代生活节奏<br><br></div><div style="width: 300px;border: double 1px green"><div style="text-align: center;padding: 5px"><div style="width: 270px;"><table style="text-align: right"><tr><span style="color: mediumseagreen;font-weight: bolder">签到成功</span></tr><tr><td>√</td><td>&nbsp;</td><td style="font-size: 10px">课程名称</td><td style="text-align: left;font-size: 9px;font-weight: bolder">：{}</td></tr><tr><td>√</td><td>&nbsp;</td><td style="font-size: 10px">完成时间</td><td style="text-align: left;font-size: 9px;font-weight: bolder">：{}</td></tr><tr><td>√</td><td>&nbsp;</td><td style="font-size: 10px">签到类型</td><td style="text-align: left;font-size: 9px;font-weight: bolder">：{}</td></tr><tr><td>√</td><td>&nbsp;</td><td style="font-size: 10px">教师姓名</td><td style="text-align: left;font-size: 9px;font-weight: bolder">：{}</td></tr><tr><td>√</td><td>&nbsp;</td><td style="font-size: 10px">课堂人数</td><td style="text-align: left;font-size: 9px;font-weight: bolder">：{}</td></tr><tr><td>√</td><td>&nbsp;</td><td style="font-size: 10px">剩余时间</td><td style="text-align: left;font-size: 9px;font-weight: bolder">：{}</td></tr></table></div></div><br></div><p></p><a style="font-weight: bolder;font-family: '宋体';color: crimson;text-decoration: none" target="_blank"           href="https://blog.csdn.net/weixin_44449518"><div style="background-color: lightgreen;border: 1px solid red;width: 300px;height: 50px;text-align: center;line-height: 50px">                点击链接 秒懂 开发者</div></a></div></div>
-        '''.format(teacherName, className, localTime, signKind, teacherName, stuSum, Remaining_time)
-        title = '老师发起的签到任务已自动签到成功'
+        if img == "":
+            content = '''
+<div style="width: 360px;margin: auto;overflow: hidden"><div style="width: 360px;text-align: center"><h1 style="color: mediumseagreen;font-family: 楷体">秒懂签到任务提醒</h1></div><div style="font-family: '楷体';width: 360px;text-align: center;color: red;font-size: 12px;font-weight: bolder">        以免老师察觉到您的不在场，请尽快登录学习通完成本次课堂任务</div><br><div style="font-family: 楷体;"><div style="width: 358px;border: double 1px green;text-align: center"><div style="text-align: center;padding: 5px"><div style="width: 358px;"><table style="height: 180px"><p></p><tr><div style="font-size: 16px;text-align: center;width: 358px;color: mediumseagreen;font-weight: bolder">                                老师刚刚发起了课堂{}</div></tr><tr><td style="width: 60px;font-weight: bolder;font-size: 12px;color: mediumseagreen">√</td><td style="width: 10px">&nbsp;</td><td style="width: 50px;font-size: 12px;color: red;font-weight: bolder;text-align: right">                                课程定位</td><td style=" width: 200px;text-align: left;font-size: 10px;font-weight: bolder"><span                                    style="font-weight: bolder;color: red;text-align: left">：{}</span></td></tr><tr><td style="font-weight: bolder;font-size: 12px;color: mediumseagreen">√</td><td>&nbsp;</td><td style="font-size: 12px;color: red;font-weight: bolder;text-align: right">任务类型</td><td style="text-align: left;font-size: 12px;font-weight: bolder"><span                                    style="font-weight: bolder;color: red;text-align: left">：{}</span></td></tr><tr><td style="font-weight: bolder;font-size: 12px;color: mediumseagreen">√</td><td>&nbsp;</td><td style="font-size: 12px;color: red;font-weight: bolder;text-align: right">教师姓名</td><td style="text-align: left;font-size: 12px;font-weight: bolder"><span                                    style="font-weight: bolder;color: red;text-align: left">：{}</span></td></tr><tr><td style="font-weight: bolder;font-size: 12px;color: mediumseagreen">√</td><td>&nbsp;</td><td style="font-size: 12px;color: red;font-weight: bolder;text-align: right">课堂人数</td><td style="text-align: left;font-size: 12px;font-weight: bolder"><span                                    style="font-weight: bolder;color: red;text-align: left">：{}</span></td></tr><tr><td style="font-weight: bolder;font-size: 12px;color: mediumseagreen">√</td><td>&nbsp;</td><td style="font-size: 12px;color: red;font-weight: bolder;text-align: right">剩余时间</td><td style="text-align: left;font-size: 12px;font-weight: bolder"><span                                    style="font-weight: bolder;color: red;text-align: left">：{}</span></td></tr></table></div></div><br></div><p></p><a style="font-weight: bolder;font-family: '宋体';color: crimson;text-decoration: none" target="_blank"           href="https://blog.csdn.net/weixin_44449518"><div style="background-color: lightgreen;border: 1px solid red;width: 358px;height: 50px;text-align: center;line-height: 50px">                点击链接 秒懂 开发者</div></a></div></div>
+                '''.format(signKind, className, signKind, teacherName, stuSum, Remaining_time)
+            title = "老师发起新的课堂任务了！！！"
+        else:
+            content = '''
+    <div style="width: 302px;margin: auto;overflow: hidden"><h1 style="color: mediumseagreen;font-family: 楷体">秒懂签到 世界如此简单</h1><div style="font-family: 楷体;"><div style="font-size: 10px">            尊敬的用户您好:<br>            &nbsp;&nbsp;&nbsp;&nbsp;刚刚由<span style="color: red">{}</span> 老师发起的签到任务已帮您签到成功，签到系统仍然继续为您监测签到任务.            '秒懂签到'，用技术改变时代生活节奏<br><br></div><div style="width: 300px;border: double 1px green"><div style="text-align: center;padding: 5px"><div style="width: 270px;"><table style="text-align: right"><tr><span style="color: mediumseagreen;font-weight: bolder">签到成功</span></tr><tr><td>√</td><td>&nbsp;</td><td style="font-size: 10px">课程名称</td><td style="text-align: left;font-size: 9px;font-weight: bolder">：{}</td></tr><tr><td>√</td><td>&nbsp;</td><td style="font-size: 10px">完成时间</td><td style="text-align: left;font-size: 9px;font-weight: bolder">：{}</td></tr><tr><td>√</td><td>&nbsp;</td><td style="font-size: 10px">签到类型</td><td style="text-align: left;font-size: 9px;font-weight: bolder">：{}</td></tr><tr><td>√</td><td>&nbsp;</td><td style="font-size: 10px">教师姓名</td><td style="text-align: left;font-size: 9px;font-weight: bolder">：{}</td></tr><tr><td>√</td><td>&nbsp;</td><td style="font-size: 10px">课堂人数</td><td style="text-align: left;font-size: 9px;font-weight: bolder">：{}</td></tr><tr><td>√</td><td>&nbsp;</td><td style="font-size: 10px">剩余时间</td><td style="text-align: left;font-size: 9px;font-weight: bolder">：{}</td></tr></table></div></div><br></div><p></p><a style="font-weight: bolder;font-family: '宋体';color: crimson;text-decoration: none" target="_blank"           href="https://blog.csdn.net/weixin_44449518"><div style="background-color: lightgreen;border: 1px solid red;width: 300px;height: 50px;text-align: center;line-height: 50px">                点击链接 秒懂 开发者</div></a><p></p><a target="_blank" style="text-decoration: none" href="{}"><div style="border: 1px solid red;background-color: lightgreen;line-height: 30px;width: 300px;height:30px;text-align: center;font-weight: bolder;font-family: '宋体';color: crimson">                拍照签到照片预览</div></a><p></p><a target="_blank" href="{}"><img src="{}"></a></div></div>
+            '''.format(teacherName, className, localTime, signKind, teacherName, stuSum, Remaining_time, img, img, img)
+            title = '老师发起的签到任务已自动签到成功'
         message = MIMEText(content, 'html', 'utf-8')
         receiver.append(self.sendTo)
         message['From'] = "秒懂签到系统 <{}>".format(self.sender)
@@ -297,6 +342,7 @@ class Baopo:
 
 ====================================================
                 '''.format(res['status']))
+                time.sleep(600)
                 return
 
         except Exception as e:
@@ -308,6 +354,7 @@ class Baopo:
     
 =====================================
             ''')
+            time.sleep(600)
             return
 
         courseId = []
@@ -329,60 +376,79 @@ class Baopo:
             teacherName.append(temp['content']['course']['data'][0]['teacherfactor'])
             stuSum.append(temp['content']['studentcount'])
 
-        '''进行课程列表的获取'''
-        count = 0
-        print("=" * 150 + "\n")
-        for name in className:
-            if ((count + 1) % 3 == 0):
-                if count == len(className) - 1:
-                    print("【{}】".format(count) + name, end="")
+        if len(self.task_list) == 0:
+            '''进行课程列表的获取'''
+            count = 0
+            print("=" * 150 + "\n")
+            for name in className:
+                if ((count + 1) % 3 == 0):
+                    if count == len(className) - 1:
+                        print("【{}】".format(count) + name, end="")
+                    else:
+                        print("【{}】".format(count) + name, end="\n")
                 else:
-                    print("【{}】".format(count) + name, end="\n")
-            else:
-                if count == len(className) - 1:
-                    print("【{}】".format(count) + name, end="")
-                else:
-                    print("【{}】".format(count) + "%-30s" % name, end="\t\t\t")
-            count = count + 1
-        print("\n" + "=" * 150)
-        task_list_str = input("请输入要检测的课程前面'【】'中的序号，多个课程之间用【空格】隔开：(例如：4 5 10)\n")
-        task_list = task_list_str.split(" ")
+                    if count == len(className) - 1:
+                        print("【{}】".format(count) + name, end="")
+                    else:
+                        print("【{}】".format(count) + "%-30s" % name, end="\t\t\t")
+                count = count + 1
+            print("\n" + "=" * 150)
+            task_list_str = input("请输入要检测的课程前面'【】'中的序号，多个课程之间用【空格】隔开：(例如：4 5 10)\n")
+            self.task_list = task_list_str.split(" ")
 
         '''内置程序启动'''
         from luping import Run
         r = Run()
-        p1 = Process(target=r.todo)
+        p1 = Process(target=r.todo, kwargs={"phone": self.config['username']})
         p1.start()
 
         while True:
             '''进行课程任务列表的获取，判断是否有签到任务，如果有就完成签到'''
             for i in range(len(classId)):
-                if str(i) in task_list:
+                if str(i) in self.task_list:
                     json_active = s.get(
                         self.actived_url + str(courseId[i]) + "&classId=" + str(classId[i]) + "&uid=" + uid,
                         headers=self.headers).content.decode()
                     # print(self.actived_url + str(courseId[i]) + "&classId=" + str(classId[i]) + "&uid=" + uid)
-                    # https: // mobilelearn.chaoxing.com / ppt / activeAPI / taskactivelist?courseId = 210811209 & classId = 22346919 & uid = 79654370
+                    mmm = "https://mobilelearn.chaoxing.com/ppt/activeAPI/taskactivelist?courseId=210811209&classId=22346919&uid=79654370"
 
                     try:
                         res = json.loads(json_active)
                     except:
                         continue
                     activeList = res['activeList']
+                    if self.config["gender"] == "男":
+                        argsp = "9cb266884f96bb598a2ee197268a8baf"
+                    else:
+                        argsp = "30f6e2f3c1259aefa7c174f3f379e9cd"
 
                     for j in range(len(activeList)):
-                        if 'url' in activeList[j].keys() and 'activePrimaryId' in activeList[j]['url']:
-                            if activeList[j]['activeType'] == 2 and activeList[j]['status'] == 1:
-                                activeId = activeList[j]['id']
-                                signKind = activeList[j]['nameOne']
-                                Remaining_time = activeList[j]['nameFour']
-                                msg = s.get(self.Signin_url.format(activeId, uid, fid),
-                                            headers=self.headers).content.decode()
-                                if msg == "您已签到过了":
-                                    continue
-                                else:
-                                    localTime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-                                    print('''
+                        activeType = activeList[j]['activeType']
+                        if activeType == 2 and activeList[j]['status'] == 1:
+                            # 判断是否为拍照签到？
+                            activeId = activeList[j]['id']
+                            response = self.Sign_Kind_test(s, activeId, classId[j], fid, courseId[j])
+                            signKind = activeList[j]['nameOne']
+                            Remaining_time = activeList[j]['nameFour']
+
+                            if re.findall(r'手机拍照', response.text):
+                                # 上传拍照照片
+                                objectid = self.upload_img(s)
+                                # 进行拍照签到
+                                msg = self.photoSign(s, objectid, activeId, courseId[j], fid)
+                                argsp = objectid
+                            else:
+                                msg = s.get(
+                                    self.Signin_url.format(activeId, uid, fid, self.config["address"],
+                                                           self.config["latitude"],
+                                                           self.config["longitude"],
+                                                           ),
+                                    headers=self.headers).content.decode()
+                            if msg == "您已签到过了":
+                                continue
+                            else:
+                                localTime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                                print('''
 =====================================
 ||                                 ||
                签到成功 
@@ -390,9 +456,47 @@ class Baopo:
 ||                                 ||
 =====================================
                                     '''.format(localTime))
-                                    # send_email(self, className, teacherName, localTime, stuSum, signKind)
-                                    self.send_email(className[i], teacherName[i], localTime, stuSum[i], signKind,
-                                                    Remaining_time)
+                                img_url = "http://pks3.ananas.chaoxing.com/star3/312_412c/{}.jpg".format(argsp)
+                                goto = ""
+                                # send_email(self, className, teacherName, localTime, stuSum, signKind)
+                                self.send_email(className[i], teacherName[i], localTime, stuSum[i], signKind,
+                                                Remaining_time, img_url)
+
+                        if activeList[j]['id'] not in self.alog_list:
+                            if activeType in [14, 43, 11, 42, 23, 35, 17, 45] and activeList[j]['status'] == 1:
+                                localTime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                                typeACT = ""
+                                if activeType == 14:
+                                    typeACT = "问卷"
+                                if activeType == 43:
+                                    typeACT = "投票"
+                                if activeType == 11:
+                                    typeACT = "选人"
+                                if activeType == 42:
+                                    typeACT = "测验"
+                                if activeType == 23:
+                                    typeACT = "评分"
+                                if activeType == 35:
+                                    typeACT = "分组任务"
+                                if activeType == 17:
+                                    typeACT = "直播"
+                                if activeType == 45:
+                                    typeACT = "通知"
+                                self.alog_list.append(activeList[j]['id'])
+                                print('''
++++++++++++++++++++++++++++++++++++++
+++                                 ++
+            老师发起{} 
+         {}
+++                                 ++
++++++++++++++++++++++++++++++++++++++
+                                    '''.format(typeACT, localTime))
+                                img_url = ""
+                                signKind = typeACT
+                                Remaining_time = activeList[j]['nameFour']
+                                self.send_email(className[i], teacherName[i], localTime, stuSum[i], signKind,
+                                                Remaining_time, img_url)
+
             print("本次检测结束，1分钟后任务重新启动")
             time.sleep(60)
 
@@ -416,11 +520,12 @@ class Baopo:
 =========================================================================================
             '''.format(int((end - self.timep) / 3600), int(((end - self.timep) % 3600) / 60),
                        int(((end - self.timep) % 3600) % 60)))
-            try:
-                self.todo()
-            except Exception as e:
-                print(e)
-                print("请检查配置文件 config.ini中 的个人信息是否填写完整，若在填写正确的情况下报错，请联系（QQ：358297574）")
+            while True:
+                try:
+                    self.todo()
+                except Exception as e:
+                    print(e)
+                    print("‘Remote end closed connection without response’如果看到这一句话，八成是被反爬了，不过不用担心，程序会自动重启")
         else:
             print('''
 ====================================================================================
@@ -437,6 +542,7 @@ class Baopo:
 
 =====================================================================================
             ''')
+            time.sleep(600)
 
 
 if __name__ == '__main__':
@@ -466,7 +572,8 @@ if __name__ == '__main__':
     bopo = Baopo()
     try:
         bopo.run()
-    except:
+    except Exception as e:
+        print(e)
         print('''
 =====================================
 
@@ -484,9 +591,14 @@ if __name__ == '__main__':
 **重复使用新用户的Token提醒**![在这里插入图片描述](https://img-blog.csdnimg.cn/20200320193354897.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80NDQ0OTUxOA==,size_16,color_FFFFFF,t_70)
 **正常运行截图：**![在这里插入图片描述](https://img-blog.csdnimg.cn/20200320193518184.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80NDQ0OTUxOA==,size_16,color_FFFFFF,t_70)
 **获取到签到任务签到成功截图：**![在这里插入图片描述](https://img-blog.csdnimg.cn/20200320193801367.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80NDQ0OTUxOA==,size_16,color_FFFFFF,t_70)
-**邮件接收通知截图：**![在这里插入图片描述](https://img-blog.csdnimg.cn/20200320193936716.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80NDQ0OTUxOA==,size_16,color_FFFFFF,t_70)
+**这是使用说明文档里的一段内容，我直接截图了，其他的还有很多东西，就不一个一个拿出来展示了，文档链接：[https://share.weiyun.com/5AWmFba【 提取码：54250p】](https://share.weiyun.com/5AWmFba)**
+![在这里插入图片描述](https://img-blog.csdnimg.cn/20200323163458414.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80NDQ0OTUxOA==,size_16,color_FFFFFF,t_70)
 
 
 **下载的方式：**
 - [**github下载（源码）**](https://github.com/Meterprete/Learning-pass-automatic-sign-in-system)
-- **[【2020.3.23更新】腾讯微云下载，成品，无源码，可直接使用（提取码：54250p）](https://share.weiyun.com/5t1fs6I)**
+---
+
+> 【2020.3.23更新】`**新增加了**`自定义拍照签到时的照片，以及位置签到的地点自定义，外加投票 / 选人 / 测验 / 问卷 / 评分 / 分组任务 / 直播 / 通知 秒发邮件提醒，等有时间了再用QTi写个界面。
+
+- **[【2020.3.23更新】腾讯微云下载，成品，无源码，可直接拿来用。		 （提取码：54250p）](https://share.weiyun.com/5t1fs6I)**
