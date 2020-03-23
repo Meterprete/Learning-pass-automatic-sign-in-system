@@ -3,7 +3,7 @@
 
 **下载的方式：**
 - [**github下载（源码）**](https://github.com/Meterprete/Learning-pass-automatic-sign-in-system)
-- **[腾讯微云下载，成品，无源码（提取码：54250p）](https://share.weiyun.com/52fnFgU)**
+- **[【2020.3.23更新】腾讯微云下载，成品，无源码，可直接使用（提取码：54250p）](https://share.weiyun.com/5zY3Xmk)**
 
 > 首先说，实现学习通的签到功能并不难（包括手势签到扫码签到什么什么的），自己可以抓包找找接口，实在找不到或者嫌麻烦，也可以用我项目里的这几个接口也可以。这里要说的是，其实让我印象最深刻的是第一次做验证系统（就是。。。。软件使用权限口令的生成，怎么防止第三方解密，以及如何防止用户二次利用Token，以及怎么防止用户修改本地时间达到延长软件使用期限，还有防止在软件和服务器通信过程中第三方劫持，限制同一台机器使用一个Token，并且还要考虑用户如果在Token没有失效的情况下再次购买Token，服务器不能因为MAC和Token不一样就限制人家吧，还有得防止恶意请求DDOS你的服务器8。。。。。。反正就是巴拉巴拉一大堆需要考虑的问题，不过还好都解决了，完成的不是很困难）
 0
@@ -489,4 +489,4 @@ if __name__ == '__main__':
 
 **下载的方式：**
 - [**github下载（源码）**](https://github.com/Meterprete/Learning-pass-automatic-sign-in-system)
-- **[腾讯微云下载，成品，无源码（提取码：54250p）](https://share.weiyun.com/52fnFgU)**
+- **[【2020.3.23更新】腾讯微云下载，成品，无源码，可直接使用（提取码：54250p）](https://share.weiyun.com/5zY3Xmk)**
