@@ -591,7 +591,7 @@ if __name__ == '__main__':
 **重复使用新用户的Token提醒**![在这里插入图片描述](https://img-blog.csdnimg.cn/20200320193354897.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80NDQ0OTUxOA==,size_16,color_FFFFFF,t_70)
 **正常运行截图：**![在这里插入图片描述](https://img-blog.csdnimg.cn/20200320193518184.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80NDQ0OTUxOA==,size_16,color_FFFFFF,t_70)
 **获取到签到任务签到成功截图：**![在这里插入图片描述](https://img-blog.csdnimg.cn/20200320193801367.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80NDQ0OTUxOA==,size_16,color_FFFFFF,t_70)
-**这是使用说明文档里的一段内容，我直接截图了，其他的还有很多东西，就不一个一个拿出来展示了，文档链接：[https://share.weiyun.com/5AWmFba【 提取码：54250p】](https://share.weiyun.com/5AWmFba)**
+**这是使用说明文档里的一段内容，我直接截图了，其他的还有很多东西，就不一个一个拿出来展示了，文档链接：[https://doc.weiyun.com/4ae7ebaeda174e5c235bfb86feee4311](https://doc.weiyun.com/4ae7ebaeda174e5c235bfb86feee4311)**
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20200323163458414.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80NDQ0OTUxOA==,size_16,color_FFFFFF,t_70)
 
 
@@ -601,4 +601,4 @@ if __name__ == '__main__':
 
 > 【2020.3.23更新】`**新增加了**`自定义拍照签到时的照片，以及位置签到的地点自定义，外加投票 / 选人 / 测验 / 问卷 / 评分 / 分组任务 / 直播 / 通知 秒发邮件提醒，等有时间了再用QT写个界面。
 
-- **[【2020.3.23更新】腾讯微云下载，成品，无源码，可直接拿来用。		 （提取码：54250p）](https://share.weiyun.com/5t1fs6I)**
+- **[【2020.3.23更新】腾讯微云下载，成品，无源码，可直接拿来用](https://share.weiyun.com/5t1fs6I)**
