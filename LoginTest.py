@@ -1,59 +1,43 @@
 import multiprocessing
 import requests
 import json
+import os
 import smtplib
 from email.mime.text import MIMEText
 import time
 import re
 import base64
-from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
-import uuid
-from multiprocessing import Process
 
 
 class Baopo:
     def __init__(self):
+        self.is_sign = []
         self.task_list = []
         self.alog_list = []
         '''读取配置文件中的配置信息'''
-        with open('config.ini', 'rb') as f:
-            self.config = json.loads((f.read()).decode())
+        file_namep = "config.ini"
+        if os.path.exists(file_namep):
+            with open(file_namep, "r") as f:
+                res = json.loads(f.read())
+                self.sendTo = res['sendTo']
+                self.username = res['username']
+                self.upassword = res['password']
+                self.longitude = res['longitude']
+                self.latitude = res['latitude']
+                self.address = res['address']
+                self.gender = res['gender']
+        else:
+            self.sendTo = input("\n邮件接收者（必填，用来接收签到成功提醒）:\n")
+            self.username = input("\n用户名（必填，且 仅支持手机号登录）:\n")
+            self.upassword = input("\n密码:\n")
+            self.longitude = input("\n经度（可不填，教师端显示，直接按 回车键 跳过）可在这里查找当前经度 http://www.gpsspg.com/maps.htm:\n")
+            self.latitude = input("\n纬度（可不填，教师端显示，直接按 回车键 跳过）可在这里查找当前经度 http://www.gpsspg.com/maps.htm:\n")
+            self.address = input("\n所在位置信息（可不填，教师端显示的信息）:\n")
+            self.gender = input("\n性别（必填:'男' or '女'）:\n")
         '''邮件信息初始化'''
         self.sender = 'wangxinq@163.com'
         self.password = '18853497580Wx'
-        self.sendTo = self.config['sendTo']
         self.mail_host = "smtp.163.com"
-        try:
-            # 获取时间戳以及约定的时间
-            self.Time = self.config['Token']
-            s = Serializer("15963395653Wx")
-            self.epc = s.loads(self.Time)['Expiration_date']
-            self.startime = int(s.loads(self.Time)['timestp'])
-        except:
-            print('''
-====================================================================================
-
-    程序无法正常运行，因为您的使用期限已到，请向开发者购买Token后继续使用。
-
-    价格规则：【7天/2块钱】（2块钱使用7天）
-    
-    开发者行寒窗苦读20载，开发软件8容易啊，哥哥姐姐们赏口饭吃吧（跪谢）
-    开发者还跑着服务器，高昂的费用使得苦逼的开发者几乎去要饭
-    8行啦，哥哥姐姐们再8赏口饭吃就真的要去桥下打地铺啦，可怜可怜苦逼的开发者8
-
-    开发者微信：weichat0007
-
-===================================================================================== 
-            ''')
-            time.sleep(600)
-            return
-
-        # 请求标准时间
-        standerd_url = "http://api.k780.com:88/?app=life.time&appkey=10003&sign=b59bc3ef6191eb9f747dd4e83c99f2a4&format=json"
-        self.timep = int(json.loads(requests.get(standerd_url).content.decode())['result']['timestamp'])
-        # 获取网卡的MAC地址
-        node = uuid.getnode()
-        self.mac = uuid.UUID(int=node).hex[-12:]
 
         '''学习通接口相关信息初始化'''
         self.Signin_url = "https://mobilelearn.chaoxing.com/pptSign/stuSignajax?activeId={}&uid={}&clientip=&appType=15&fid={}&address={}&latitude={}&longitude={}"
@@ -61,11 +45,12 @@ class Baopo:
         self.getclass_url = "http://mooc1-api.chaoxing.com/mycourse/backclazzdata?view=json&rss=1"
         self.index_url = "http://i.mooc.chaoxing.com/space/index?"
         self.login_url = "https://passport2.chaoxing.com/fanyalogin"
+
         self.login_data = {
             "fid": "-1",
-            "uname": self.config['username'],
+            "uname": self.username,
             'refer': 'http://fxlogin.chaoxing.com/findlogin.jsp?backurl=http://www.chaoxing.com/channelcookie',
-            "password": re.findall(r"b'(.*)'", str(base64.b64encode(self.config['password'].encode())))[0],
+            "password": re.findall(r"b'(.*)'", str(base64.b64encode(self.upassword.encode())))[0],
             "t": "true"
         }
 
@@ -95,7 +80,7 @@ class Baopo:
             img = {"file": ("Sign.jpg", open("./IMG/M.jpg", "rb"))}
         except:
             print("图片未找到，如果出现了此提示，则说明您未设置拍照签到的图片，已为您发送系统默认的图片，若想自定义照片，请把照片命名为 'M.jpg' 后放在 'IMG' 文件夹中")
-            if self.config["gender"] == "男":
+            if self.gender == "男":
                 return "9cb266884f96bb598a2ee197268a8baf"
             else:
                 return "30f6e2f3c1259aefa7c174f3f379e9cd"
@@ -153,21 +138,14 @@ class Baopo:
             s.post(url=self.login_url, headers=self.headers, data=self.login_data)
             class_list_html = s.get(self.getclass_url, headers=self.headers).content.decode()
             class_list_dict = json.loads(class_list_html)['channelList']
-            from tts import Test_check
-            check = Test_check()
-            res = json.loads(check.run(token=self.Time, phone=self.config['username'], pwd=self.config['password'],
-                                       mac=self.mac).content.decode())
-            if res['status'] != 'True':
-                print('''
-====================================================
-
-    {}
-
-====================================================
-                '''.format(res['status']))
-                time.sleep(600)
-                return
-
+            '''写入文件'''
+            file_name = "config.ini"
+            if not os.path.exists(file_name):
+                dict_config = {"username": self.username, "password": self.upassword, "longitude": self.longitude,
+                               "latitude": self.latitude, "sendTo": self.sendTo, "gender": self.gender,
+                               "address": self.address}
+                with open(file_name, "w") as f:
+                    f.write(json.dumps(dict_config))
         except Exception as e:
             print(e)
             print('''
@@ -179,7 +157,6 @@ class Baopo:
             ''')
             time.sleep(600)
             return
-
         courseId = []
         classId = []
         className = []
@@ -216,14 +193,11 @@ class Baopo:
                         print("【{}】".format(count) + "%-30s" % name, end="\t\t\t")
                 count = count + 1
             print("\n" + "=" * 150)
-            task_list_str = input("请输入要检测的课程前面'【】'中的序号，多个课程之间用【空格】隔开：(例如：4 5 10)\n")
-            self.task_list = task_list_str.split(" ")
-
-        '''内置程序启动'''
-        from luping import Run
-        r = Run()
-        p1 = Process(target=r.todo, kwargs={"phone": self.config['username']})
-        p1.start()
+            # task_list_str = input("请输入要检测的课程前面'【】'中的序号，多个课程之间用【空格】隔开：(例如：4 5 10)\n")
+            # self.task_list = task_list_str.split(" ")
+            for i in range(len(className)):
+                self.task_list.append(str(i))
+            print("已选中的课程列表：{}".format(self.task_list))
 
         while True:
             '''进行课程任务列表的获取，判断是否有签到任务，如果有就完成签到'''
@@ -233,14 +207,13 @@ class Baopo:
                         self.actived_url + str(courseId[i]) + "&classId=" + str(classId[i]) + "&uid=" + uid,
                         headers=self.headers).content.decode()
                     # print(self.actived_url + str(courseId[i]) + "&classId=" + str(classId[i]) + "&uid=" + uid)
-                    mmm = "https://mobilelearn.chaoxing.com/ppt/activeAPI/taskactivelist?courseId=210811209&classId=22346919&uid=79654370"
-
+                    # mm = "https://mobilelearn.chaoxing.com/ppt/activeAPI/taskactivelist?courseId=210811209&classId=22346890&uid=79654370"
                     try:
                         res = json.loads(json_active)
                     except:
                         continue
                     activeList = res['activeList']
-                    if self.config["gender"] == "男":
+                    if self.gender == "男":
                         argsp = "9cb266884f96bb598a2ee197268a8baf"
                     else:
                         argsp = "30f6e2f3c1259aefa7c174f3f379e9cd"
@@ -250,6 +223,8 @@ class Baopo:
                         if activeType == 2 and activeList[j]['status'] == 1:
                             # 判断是否为拍照签到？
                             activeId = activeList[j]['id']
+                            if activeId in self.is_sign:
+                                continue
                             response = self.Sign_Kind_test(s, activeId, classId[j], fid, courseId[j])
                             signKind = activeList[j]['nameOne']
                             Remaining_time = activeList[j]['nameFour']
@@ -260,33 +235,43 @@ class Baopo:
                                 # 进行拍照签到
                                 msg = self.photoSign(s, objectid, activeId, courseId[j], fid)
                                 argsp = objectid
-                            else:
-                                msg = s.get(
-                                    self.Signin_url.format(activeId, uid, fid, self.config["address"],
-                                                           self.config["latitude"],
-                                                           self.config["longitude"],
-                                                           ),
-                                    headers=self.headers).content.decode()
-                            if msg == "您已签到过了":
+
+                            elif re.findall(r'签到成功', response.text):
+                                print('''
+检测到签到任务，签到任务仍未结束，但确认您已签到成功，如果看到这句话，那么可以肯定您已签到成功！！！
+但并不确定是否为本程序完成的普通签到，所以放弃邮件通知！
+（原因，拍照签到和普通签到接口冲突，无法判断是刚完成的普通签到还是之前已完成的其他类型的签到，故放弃通知！）
+                                ''')
+                                self.is_sign.append(activeId)
                                 continue
+
+
                             else:
+                                # 有可能已经签到成功，也有可能为普通签到成功
+                                # 位置签到 / 扫码签到等
+                                msg = s.get(
+                                    self.Signin_url.format(activeId, uid, fid, self.address,
+                                                           self.latitude,
+                                                           self.longitude,
+                                                           ),
+                                    headers=self.headers).text
+                            if msg == "success":
                                 localTime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
                                 print('''
 =====================================
 ||                                 ||
-               签到成功 
-         {}
+           签到成功 
+     {}
 ||                                 ||
 =====================================
                                     '''.format(localTime))
                                 img_url = "http://pks3.ananas.chaoxing.com/star3/312_412c/{}.jpg".format(argsp)
-                                goto = ""
                                 # send_email(self, className, teacherName, localTime, stuSum, signKind)
                                 self.send_email(className[i], teacherName[i], localTime, stuSum[i], signKind,
                                                 Remaining_time, img_url)
 
-                        if activeList[j]['id'] not in self.alog_list:
-                            if activeType in [14, 43, 11, 42, 23, 35, 17, 45] and activeList[j]['status'] == 1:
+                        if activeType in [14, 43, 11, 42, 23, 35, 17, 45] and activeList[j]['status'] == 1:
+                            if activeList[j]['id'] not in self.alog_list:
                                 localTime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
                                 typeACT = ""
                                 if activeType == 14:
@@ -321,51 +306,15 @@ class Baopo:
                                                 Remaining_time, img_url)
 
             print("本次检测结束，1分钟后任务重新启动")
-            time.sleep(60)
+            time.sleep(10)
 
     def run(self):
-        end = self.startime + self.epc
-        if end >= self.timep:
-            print('''
-========================================================================================
-
-        您的使用时间还剩 {} 小时 {} 分钟 {} 秒，以免影响您的正常使用
-        请联系开发者购买更多使用时间
-
-    开发者行寒窗苦读20载，开发软件8容易啊，哥哥姐姐们赏口饭吃吧（跪谢）
-    开发者还跑着服务器，高昂的费用使得苦逼的开发者几乎去要饭
-    8行啦，哥哥姐姐们再8赏口饭吃就真的要去桥下打地铺啦，可怜可怜苦逼的开发者8
-
-        价格规则：【7天/2块钱】（2块钱使用7天）
-
-        开发者微信：weichat0007
-
-=========================================================================================
-            '''.format(int((end - self.timep) / 3600), int(((end - self.timep) % 3600) / 60),
-                       int(((end - self.timep) % 3600) % 60)))
-            while True:
-                try:
-                    self.todo()
-                except Exception as e:
-                    print(e)
-                    print("‘Remote end closed connection without response’如果看到这一句话，八成是被反爬了，不过不用担心，程序会自动重启")
-        else:
-            print('''
-====================================================================================
-
-    程序无法正常运行，因为您的使用期限已到，请向开发者购买Token后继续使用。
-
-    价格规则：【7天/2块钱】（2块钱使用7天）
-    
-    开发者行寒窗苦读20载，开发软件8容易啊，哥哥姐姐们赏口饭吃吧（跪谢）
-    开发者还跑着服务器，高昂的费用使得苦逼的开发者几乎去要饭
-    8行啦，哥哥姐姐们再8赏口饭吃就真的要去桥下打地铺啦，可怜可怜苦逼的开发者8
-
-    开发者微信：weichat0007
-
-=====================================================================================
-            ''')
-            time.sleep(600)
+        while True:
+            try:
+                self.todo()
+            except Exception as e:
+                print(e)
+                print("‘Remote end closed connection without response’如果看到这一句话，八成是被反爬了，不过不用担心，程序会自动重启")
 
 
 if __name__ == '__main__':
